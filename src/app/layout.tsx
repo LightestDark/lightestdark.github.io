@@ -8,6 +8,8 @@ const syne = Syne({
   weight: ["500", "700", "800"],
 });
 
+
+
 const ibmPlexMono = IBM_Plex_Mono({
   variable: "--font-ibm-plex-mono",
   subsets: ["latin"],

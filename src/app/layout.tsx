@@ -17,7 +17,7 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Abdul | Electrical Engineering Portfolio",
+  title: "Abdul | Software Engineering Portfolio",
   description: "Technical dark portfolio for Abdul, maker and KCL EE student.",
 };
 

@@ -141,6 +141,32 @@ export default function Home() {
     };
   }, []);
 
+  // ── Glitch-reveal for ABDUL ──────────────────────────────────────────────
+  useEffect(() => {
+    const GLITCH_MS  = 210;
+    const YELLOW_MS  = 160;
+    const letters    = heroLettersRef.current.filter(Boolean);
+    const shuffled   = [...letters].sort(() => Math.random() - 0.5);
+    const total      = shuffled.length;
+    const totalSpread = 460;
+
+    shuffled.forEach((el, i) => {
+      const delay = (i / total) * totalSpread + Math.random() * 80;
+      setTimeout(() => {
+        el.classList.remove("hero-letter-hidden");
+        el.classList.add("hero-letter-glitch");
+        setTimeout(() => {
+          el.classList.remove("hero-letter-glitch");
+          el.classList.add("hero-letter-yellow");
+          setTimeout(() => {
+            el.classList.remove("hero-letter-yellow");
+            el.classList.add("hero-letter-final");
+          }, YELLOW_MS);
+        }, GLITCH_MS);
+      }, delay);
+    });
+  }, []);
+
   useGSAP(
     () => {
       const text = "Software Student & Maker - KCL '27";
@@ -148,12 +174,6 @@ export default function Home() {
       const intro = gsap.timeline({ defaults: { ease: "power3.out" } });
       intro
         .fromTo(gridFlashRef.current, { opacity: 0.38 }, { opacity: 0, duration: 0.7 })
-        .fromTo(
-          heroLettersRef.current,
-          { y: 120, opacity: 0 },
-          { y: 0, opacity: 1, stagger: 0.06, duration: 0.9 },
-          "<+0.1"
-        )
         .fromTo(
           "[data-fade-intro]",
           { y: 28, opacity: 0 },
@@ -355,7 +375,7 @@ export default function Home() {
                       heroLettersRef.current[index] = el;
                     }
                   }}
-                  className="inline-block opacity-0"
+                  className="inline-block hero-letter-hidden"
                 >
                   {char}
                 </span>

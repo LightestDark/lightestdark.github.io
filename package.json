@@ -1,0 +1,35 @@
+{
+  "name": "website",
+  "version": "0.1.0",
+  "private": true,
+  "homepage": "https://abdul.github.io/website",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "export": "next export",
+    "deploy": "npm run build && npm run export && gh-pages -d out"
+  },
+  "dependencies": {
+    "@google/model-viewer": "^4.2.0",
+    "@gsap/react": "^2.1.2",
+    "framer-motion": "^12.38.0",
+    "gsap": "^3.15.0",
+    "lenis": "^1.3.21",
+    "next": "14.2.25",
+    "react": "18.2.0",
+    "react-dom": "18.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^8.57.1",
+    "eslint-config-next": "14.2.25",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5"
+  }
+}

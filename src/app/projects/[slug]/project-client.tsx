@@ -15,6 +15,7 @@ export function generateStaticParams() {
     { slug: 'shotta-mk2' },
     { slug: 'bmo' },
     { slug: 'rc-boat' },
+    { slug: 'fma-clock' },
   ]
 }
 

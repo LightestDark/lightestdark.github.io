@@ -114,24 +114,6 @@ export const projects: Project[] = [
     // images: ["/images/fma-clock/1.jpg", "/images/fma-clock/2.jpg", "/images/fma-clock/3.jpg"],
     images: [],
   },
-  {
-    index: "04",
-    slug: "fma-clock",
-    name: "FMA CLOCK",
-    nameSub: "FULLMETAL ALCHEMIST CLOCK",
-    model: "/models/fma-clock.glb",
-    summary:
-      "Arduino-driven desktop clock themed around Fullmetal Alchemist.",
-    description:
-      "FMA CLOCK is a completed desktop timepiece built as a tribute to Fullmetal Alchemist, combining Arduino-based timekeeping electronics with a character-driven enclosure design. The project focuses on making a themed build feel like a finished object rather than a bare prototype, pairing reliable timekeeping with a presentation-first approach to the physical design.",
-    specs: [
-      ["Type", "Desktop Clock"],
-      ["Theme", "Fullmetal Alchemist"],
-      ["Control", "Arduino"],
-      ["Status", "Complete"],
-    ],
-    tags: ["Arduino", "Embedded Systems", "Fullmetal Alchemist"],
-  },
 ];
 
 export function getProjectBySlug(slug: string) {

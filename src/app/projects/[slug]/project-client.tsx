@@ -9,12 +9,14 @@ import { motion } from "framer-motion";
 import { getProjectBySlug } from "@/data/projects";
 import CustomCursor from "@/components/custom-cursor";
 import ProjectModelViewer from "./model-viewer";
+import PhotoStack from "./photo-stack";
 
 export function generateStaticParams() {
   return [
     { slug: 'shotta-mk2' },
-    { slug: 'bmo' },
+    { slug: 'bmos' },
     { slug: 'rc-boat' },
+    { slug: 'fma-clock' },
   ]
 }
 
@@ -187,6 +189,23 @@ export default function ProjectPage() {
                   <span>{value}</span>
                 </div>
               ))}
+            </div>
+
+            <div data-reveal className="space-y-4">
+              <p className="font-mono text-xs uppercase tracking-[0.15em] text-[#444]">
+                Build Photos
+              </p>
+              {project.images && project.images.length > 0 ? (
+                <div className="flex justify-center py-4">
+                  <PhotoStack images={project.images} alt={project.name} />
+                </div>
+              ) : (
+                <div className="flex aspect-[4/5] max-w-xs items-center justify-center rounded-[2px] border-2 border-dashed border-[#262626] bg-[#0d0d0d] mx-auto">
+                  <div className="rounded-full border border-[#2e2e2e] bg-[#080808]/70 px-5 py-3 font-mono text-xs uppercase tracking-[0.15em] text-[#e8e6df] backdrop-blur-sm">
+                    PHOTOS COMING SOON
+                  </div>
+                </div>
+              )}
             </div>
 
             <div data-reveal className="rounded-2xl border border-[#171717] bg-[#090909] p-5 text-sm text-[#b4b0a4] md:text-base">

@@ -10,6 +10,12 @@ export type Project = {
   description: string;
   specs: ProjectSpec[];
   tags: string[];
+  /**
+   * Build photos for the polaroid-stack gallery on the project page.
+   * Drop files in public/images/<slug>/ and list their paths here, e.g.
+   * ["/images/fma-clock/1.jpg", "/images/fma-clock/2.jpg"].
+   */
+  images?: string[];
 };
 
 export const projects: Project[] = [
@@ -37,6 +43,7 @@ export const projects: Project[] = [
       "DC Motors",
       "PWM Control",
     ],
+    images: [],
   },
   {
     index: "02",
@@ -64,6 +71,7 @@ export const projects: Project[] = [
       "3D Printing",
       "Embedded Systems",
     ],
+    images: [],
   },
   {
     index: "03",
@@ -83,6 +91,28 @@ export const projects: Project[] = [
       ["Status", "Complete"],
     ],
     tags: ["Arduino", "WiFi UDP", "C++", "Motor Control", "PCB Design"],
+    images: [],
+  },
+  {
+    index: "04",
+    slug: "fma-clock",
+    name: "FMA CLOCK",
+    nameSub: "FULLMETAL ALCHEMIST CLOCK",
+    model: "/models/fma-clock.glb",
+    summary:
+      "Arduino-driven desktop clock themed around Fullmetal Alchemist.",
+    description:
+      "FMA CLOCK is a completed desktop timepiece built as a tribute to Fullmetal Alchemist, combining Arduino-based timekeeping electronics with a character-driven enclosure design. The project focuses on making a themed build feel like a finished object rather than a bare prototype, pairing reliable timekeeping with a presentation-first approach to the physical design.",
+    specs: [
+      ["Type", "Desktop Clock"],
+      ["Theme", "Fullmetal Alchemist"],
+      ["Control", "Arduino"],
+      ["Status", "Complete"],
+    ],
+    tags: ["Arduino", "Embedded Systems", "Fullmetal Alchemist"],
+    // Example: drop your build photos in public/images/fma-clock/ and list them here.
+    // images: ["/images/fma-clock/1.jpg", "/images/fma-clock/2.jpg", "/images/fma-clock/3.jpg"],
+    images: [],
   },
 ];
 

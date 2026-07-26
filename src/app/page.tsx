@@ -40,12 +40,31 @@ const devlog = [
 ];
 
 const navItems = [
-  { id: "about", label: "About" },
-  { id: "projects", label: "Projects" },
-  { id: "skills", label: "Skills" },
-  { id: "devlog", label: "Devlog" },
-  { id: "contact", label: "Contact" },
+  { id: "about", label: "About", index: "01" },
+  { id: "projects", label: "Projects", index: "02" },
+  { id: "skills", label: "Skills", index: "03" },
+  { id: "devlog", label: "Devlog", index: "04" },
+  { id: "contact", label: "Contact", index: "05" },
 ];
+
+// Edit this to update the live status shown next to the hero tagline.
+const SITE_STATUS = {
+  label: "Open to opportunities",
+  active: true,
+};
+
+const TAGLINE = "Engineer & Maker - KCL '27";
+const GITHUB_REPO = "lightestdark/lightestdark.github.io";
+
+function formatRelativeTime(dateStr: string) {
+  const diffMs = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 60) return `${Math.max(mins, 1)}M AGO`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}H AGO`;
+  const days = Math.floor(hours / 24);
+  return `${days}D AGO`;
+}
 
 export default function Home() {
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -58,6 +77,7 @@ export default function Home() {
   const devlogWrapRef = useRef<HTMLDivElement | null>(null);
   const [typedLine, setTypedLine] = useState("");
   const [activeSection, setActiveSection] = useState("about");
+  const [lastShipped, setLastShipped] = useState<string | null>(null);
 
   const hero = useMemo(() => "ABDUL".split(""), []);
 
@@ -141,6 +161,24 @@ export default function Home() {
     };
   }, []);
 
+  // ── Live "last shipped" stat, pulled from GitHub, falls back silently ────
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`https://api.github.com/repos/${GITHUB_REPO}/commits?per_page=1`)
+      .then((res) => (res.ok ? res.json() : Promise.reject(res.status)))
+      .then((data) => {
+        if (cancelled) return;
+        const date = data?.[0]?.commit?.author?.date;
+        if (date) setLastShipped(formatRelativeTime(date));
+      })
+      .catch(() => {
+        // Keep the static fallback text below if the API call fails or rate-limits.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   // ── Glitch-reveal for ABDUL ──────────────────────────────────────────────
   useEffect(() => {
     const GLITCH_MS  = 210;
@@ -169,7 +207,7 @@ export default function Home() {
 
   useGSAP(
     () => {
-      const text = "Engineer & Maker - KCL '27";
+      const text = TAGLINE;
 
       const intro = gsap.timeline({ defaults: { ease: "power3.out" } });
       intro
@@ -347,17 +385,23 @@ export default function Home() {
       </div>
 
       <nav className="fixed right-5 top-5 z-50 mix-blend-difference md:right-10 md:top-8">
-        <ul className="flex items-center gap-3 rounded-full border border-[#222] bg-[#080808]/35 px-4 py-2 backdrop-blur-sm">
-          {navItems.map((item) => (
-            <li key={item.id}>
+        <ul className="flex items-center gap-4 md:gap-6">
+          {navItems.map((item, i) => (
+            <li key={item.id} className="flex items-center gap-4 md:gap-6">
               <a
                 href={`#${item.id}`}
-                className={`nav-link magnetic font-mono uppercase tracking-[0.15em] text-[10px] md:text-[11px] ${
+                className={`nav-link magnetic inline-flex items-center font-mono uppercase tracking-[0.15em] text-[10px] md:text-[11px] ${
                   activeSection === item.id ? "text-[#ff4500]" : "text-[#e8e6df]"
                 }`}
               >
+                <span className="mr-1.5 text-[#4a4a4a]">{item.index}</span>
                 {item.label}
               </a>
+              {i < navItems.length - 1 ? (
+                <span className="text-[#333] select-none" aria-hidden="true">
+                  /
+                </span>
+              ) : null}
             </li>
           ))}
         </ul>
@@ -365,7 +409,14 @@ export default function Home() {
 
       <section className="relative min-h-screen px-4 pb-20 pt-28 md:px-10" id="hero">
         <div className="mx-auto flex h-[calc(100vh-7rem)] w-full max-w-[1280px] flex-col justify-between">
-          <div className="mt-14">
+          <div className="relative mt-14">
+            <span className="blueprint-corner blueprint-corner-tl hidden md:block" aria-hidden="true" />
+            <span className="blueprint-corner blueprint-corner-br hidden md:block" aria-hidden="true" />
+            <span className="dim-line-v hidden md:block" aria-hidden="true" />
+            <span className="dim-label-v hidden md:block" aria-hidden="true">
+              5-Char / Display Bold / Tracking -0.06em
+            </span>
+
             <h1 className="font-display whitespace-nowrap text-[clamp(4rem,12.5vw,13rem)] font-extrabold leading-none tracking-[-0.06em] md:text-[clamp(5rem,15vw,14rem)]" aria-label="ABDUL">
               {hero.map((char, index) => (
                 <span
@@ -382,19 +433,34 @@ export default function Home() {
               ))}
             </h1>
 
+            <div className="tick-ruler mt-4 hidden md:flex" aria-hidden="true">
+              {Array.from({ length: 34 }).map((_, i) => (
+                <span key={i} className={i % 5 === 0 ? "tick-major" : undefined} />
+              ))}
+            </div>
+
             <p
               ref={typeLineRef}
-              className="mt-6 font-mono text-xs uppercase tracking-[0.15em] text-[#444] opacity-0 md:text-sm"
+              className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-2 font-mono text-xs uppercase tracking-[0.15em] text-[#444] opacity-0 md:text-sm"
             >
-              {typedLine}
-              <span className="type-caret">|</span>
+              <span>{typedLine}</span>
+              {typedLine.length >= TAGLINE.length ? (
+                <span className="status-indicator inline-flex items-center gap-2 text-[#e8e6df]">
+                  <span
+                    className={`status-dot ${SITE_STATUS.active ? "status-dot-active" : ""}`}
+                    aria-hidden="true"
+                  />
+                  {SITE_STATUS.label}
+                </span>
+              ) : null}
             </p>
           </div>
 
           <div className="flex items-end justify-between pb-3 text-[10px] uppercase tracking-[0.15em] text-[#444] md:text-xs">
-            <p data-fade-intro>51.5degN 0.1degW / LONDON</p>
-            <a data-fade-intro href="#about" className="group magnetic flex items-center gap-2 text-[#e8e6df]">
-              <span>Scroll</span>
+            <p data-fade-intro>
+              {lastShipped ? `Last shipped ${lastShipped}` : "51.5degN 0.1degW / LONDON"}
+            </p>
+            <a data-fade-intro href="#about" className="group magnetic flex items-center gap-2 text-[#e8e6df]" aria-label="Scroll to content">
               <span className="h-px w-10 bg-[#ff4500] transition-all duration-500 group-hover:w-16" />
             </a>
           </div>

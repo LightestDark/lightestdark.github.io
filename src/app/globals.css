@@ -219,6 +219,37 @@ summary,
   }
 }
 
+/* ── Hero glitch-reveal letter states ── */
+.hero-letter-hidden {
+  opacity: 0;
+}
+
+.hero-letter-glitch {
+  opacity: 1;
+  text-shadow: -3px 0 4px #ff1a00, 3px 0 4px #00cc44;
+  animation: hero-flicker 0.08s steps(1) infinite;
+}
+
+.hero-letter-yellow {
+  opacity: 1;
+  color: #ffe600 !important;
+  text-shadow: 0 0 16px #ffd000;
+  animation: none;
+}
+
+.hero-letter-final {
+  opacity: 1;
+  text-shadow: none;
+  animation: none;
+}
+
+@keyframes hero-flicker {
+  0%   { text-shadow: -3px 0 4px #ff1a00, 3px 0 4px #00cc44;   opacity: 1;    }
+  25%  { text-shadow: -2px 0 2px #cc0000, 2px 0 2px #009933;   opacity: 0.85; }
+  50%  { text-shadow: -5px 0 5px #ff3300, 5px 0 5px #00ff55;   opacity: 1;    }
+  75%  { text-shadow: -1px 0 1px #ff0000, 1px 0 1px #00aa33;   opacity: 0.9;  }
+}
+
 @media (pointer: coarse) {
   body {
     cursor: auto;

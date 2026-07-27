@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import gsap from "gsap";
@@ -9,6 +9,7 @@ import { Draggable } from "gsap/Draggable";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
 import { projects } from "@/data/projects";
+import { ProjectIcon } from "@/components/project-icons";
 
 gsap.registerPlugin(ScrollTrigger, Draggable, useGSAP);
 
@@ -53,8 +54,32 @@ const SITE_STATUS = {
   active: true,
 };
 
+// The three stacked words in the closing CTA. Edit freely, keep it to three
+// short words to preserve the layout rhythm.
+const CTA_WORDS = ["BUILD", "WITH", "ME"];
+
 const TAGLINE = "Engineer & Maker - KCL '27";
 const GITHUB_REPO = "lightestdark/lightestdark.github.io";
+
+// Skills matrix: each row lists the tag strings (from projects.ts) that count
+// as evidence of that skill, so the table below is computed from real project
+// data instead of being a hand-typed, unverifiable list.
+const SKILL_MATRIX = [
+  { category: "Hardware & Fabrication", skill: "3D Printing", match: ["3D Printing"] },
+  { category: "Hardware & Fabrication", skill: "Fusion 360 / CAD", match: ["Fusion 360"] },
+  { category: "Hardware & Fabrication", skill: "PCB Design", match: ["PCB Design"] },
+  { category: "Embedded Systems", skill: "Arduino", match: ["Arduino", "Arduino Nano 33 IoT"] },
+  { category: "Embedded Systems", skill: "Raspberry Pi", match: ["Raspberry Pi"] },
+  { category: "Embedded Systems", skill: "Motor Control", match: ["DC Motors", "Motor Control", "PWM Control"] },
+  { category: "Embedded Systems", skill: "Wireless Comms", match: ["WiFi UDP", "Bluetooth"] },
+  { category: "Software & Tools", skill: "C++", match: ["C++"] },
+  { category: "Software & Tools", skill: "Python", match: ["Python", "RetroPie"] },
+  { category: "Software & Tools", skill: "Linux", match: ["Linux", "Embedded Systems"] },
+];
+
+function projectHasSkill(tags: string[], match: string[]) {
+  return match.some((m) => tags.some((tag) => tag.toLowerCase() === m.toLowerCase()));
+}
 
 function formatRelativeTime(dateStr: string) {
   const diffMs = Date.now() - new Date(dateStr).getTime();
@@ -504,35 +529,43 @@ export default function Home() {
             <article
               key={project.index}
               data-project-card
-              className="group relative overflow-hidden rounded-2xl border border-[#222] bg-[#111] p-6 transition-all duration-500 hover:border-[#ff4500] hover:shadow-[0_0_40px_rgba(255,69,0,0.18)] md:p-8"
+              style={{ "--project-accent": project.accent } as CSSProperties}
+              className="group relative overflow-hidden rounded-2xl border border-[#222] bg-[#111] p-6 transition-all duration-500 hover:border-[var(--project-accent)] hover:shadow-[0_0_40px_-8px_var(--project-accent)] md:p-8"
             >
-              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_30%,rgba(255,69,0,0.15),transparent_40%),radial-gradient(circle_at_85%_80%,rgba(255,184,0,0.12),transparent_40%)] opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+              <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100" style={{ background: `radial-gradient(circle at 15% 30%, color-mix(in srgb, var(--project-accent) 16%, transparent), transparent 40%)` }} />
               <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(255,255,255,0.02)_0%,transparent_35%,rgba(255,255,255,0.04)_100%)] opacity-60 transition-opacity duration-500 group-hover:opacity-25" />
 
               <div className="relative grid gap-8 md:grid-cols-[1.3fr_1fr]">
                 <div>
-                  <p className="font-mono text-xs uppercase tracking-[0.15em] text-[#444]">[{project.index}]</p>
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-full border border-[#2c2c2c] text-[var(--project-accent)] transition-colors duration-500 group-hover:border-[var(--project-accent)]">
+                      <ProjectIcon slug={project.slug} className="h-5 w-5" />
+                    </span>
+                    <p className="font-mono text-xs uppercase tracking-[0.15em] text-[#444]">[{project.index}]</p>
+                  </div>
                   <h3 className="mt-4 font-display text-[14vw] font-extrabold leading-[0.9] md:text-[6vw]">
                     {project.name}
                   </h3>
                 </div>
 
                 <div className="space-y-5">
-                  <div className="flex flex-wrap gap-2">
-                    {project.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="rounded-full border border-[#323232] bg-[#0f0f0f] px-3 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-[#c5c2b8]"
-                      >
-                        {tag}
-                      </span>
+                  <div className="rounded-lg border border-[#242424] bg-[#0c0c0c] p-4 font-mono text-[11px] leading-relaxed">
+                    <p className="mb-2 text-[#3d3d3d]">cat ./{project.slug}/specs.txt</p>
+                    {project.specs.map(([label, value]) => (
+                      <div key={label} className="flex gap-2">
+                        <span className="text-[#4a4a4a]">{label.toLowerCase()}:</span>
+                        <span className="text-[#c5c2b8]">{value}</span>
+                      </div>
                     ))}
                   </div>
                   <p className="max-w-xl text-sm leading-relaxed text-[#cecbbf] md:text-base">
                     {project.summary}
                   </p>
-                  <Link href={`/projects/${project.slug}`} className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.15em] text-[#ffb800] magnetic">
-                    View Build <span className="text-[#ff4500]">-&gt;</span>
+                  <Link
+                    href={`/projects/${project.slug}`}
+                    className="magnetic inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.15em] text-[var(--project-accent)]"
+                  >
+                    View Build <span>-&gt;</span>
                   </Link>
                 </div>
               </div>
@@ -545,47 +578,67 @@ export default function Home() {
         <h2 data-reveal className="font-mono text-xs uppercase tracking-[0.15em] text-[#444] md:text-sm">
           // 03 - CAPABILITIES
         </h2>
+        <p data-reveal className="mt-3 max-w-xl font-mono text-[11px] uppercase tracking-[0.15em] text-[#5a564c]">
+          Cross-referenced against the builds above, not a self-rated list.
+        </p>
 
-        <div className="relative mt-10 grid gap-4 md:grid-cols-2">
-          <svg
-            className="pointer-events-none absolute -inset-4 hidden h-[calc(100%+2rem)] w-[calc(100%+2rem)] opacity-35 md:block"
-            viewBox="0 0 100 60"
-            preserveAspectRatio="none"
-            aria-hidden="true"
-          >
-            <path d="M5 10 H45 V26 H95" stroke="#2e2e2e" strokeWidth="0.35" fill="none" />
-            <path d="M5 50 H55 V34 H95" stroke="#2e2e2e" strokeWidth="0.35" fill="none" />
-          </svg>
-
-          {[
-            {
-              title: "Hardware & Fabrication",
-              items: ["3D Printing", "Fusion 360", "Rapid Prototyping", "Mechanical Assembly"],
-            },
-            {
-              title: "Embedded Systems",
-              items: ["Arduino", "Raspberry Pi", "PWM + Motor Control", "Wireless Comms"],
-            },
-            {
-              title: "Software & Tools",
-              items: ["C++", "Python", "Linux", "Git + VS Code"],
-            },
-            {
-              title: "Education",
-              items: ["King's College London", "BEng Electrical Engineering", "First Year", "KCL '27"],
-            },
-          ].map((group) => (
-            <article key={group.title} className="capability-card rounded-xl border border-[#242424] bg-[#101010] p-5">
-              <h3 className="font-mono text-[11px] uppercase tracking-[0.15em] text-[#ff4500]">{group.title}</h3>
-              <ul className="mt-4 space-y-2 text-sm text-[#d4d0c4]">
-                {group.items.map((item) => (
-                  <li key={item} className="font-mono uppercase tracking-[0.1em] text-[#b4b0a4]">
-                    {item}
-                  </li>
+        <div data-reveal className="mt-8 overflow-x-auto">
+          <table className="w-full min-w-[560px] border-collapse font-mono text-[11px] tracking-[0.08em]">
+            <thead>
+              <tr>
+                <th className="border-b border-[#242424] p-3 text-left font-normal text-[#444]"> </th>
+                {projects.map((project) => (
+                  <th
+                    key={project.slug}
+                    className="border-b border-[#242424] p-3 text-center font-normal uppercase"
+                    style={{ color: project.accent }}
+                  >
+                    {project.name}
+                  </th>
                 ))}
-              </ul>
-            </article>
-          ))}
+              </tr>
+            </thead>
+            <tbody>
+              {SKILL_MATRIX.map((row, i) => {
+                const prevCategory = i > 0 ? SKILL_MATRIX[i - 1].category : null;
+                return (
+                  <Fragment key={row.skill}>
+                    {row.category !== prevCategory ? (
+                      <tr aria-hidden="true">
+                        <td colSpan={projects.length + 1} className="pt-6 pb-1 text-[10px] uppercase tracking-[0.15em] text-[#ff4500]">
+                          {row.category}
+                        </td>
+                      </tr>
+                    ) : null}
+                    <tr className="border-b border-[#1a1a1a]">
+                      <td className="p-3 text-[13px] normal-case tracking-normal text-[#c5c2b8]">{row.skill}</td>
+                      {projects.map((project) => (
+                        <td key={project.slug} className="p-3 text-center">
+                          {projectHasSkill(project.tags, row.match) ? (
+                            <span style={{ color: project.accent }} aria-label="Used">
+                              ●
+                            </span>
+                          ) : (
+                            <span className="text-[#2a2a2a]" aria-hidden="true">
+                              ·
+                            </span>
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  </Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="mt-8 flex flex-wrap items-center gap-x-8 gap-y-2 border-t border-[#1a1a1a] pt-6 font-mono text-[11px] uppercase tracking-[0.15em] text-[#7a776c]">
+          <span className="text-[#ff4500]">Education</span>
+          <span>King&apos;s College London</span>
+          <span>BEng Electrical Engineering</span>
+          <span>First Year</span>
+          <span>KCL &apos;27</span>
         </div>
       </section>
 
@@ -621,10 +674,18 @@ export default function Home() {
           // 05 - CONTACT
         </h2>
         <h3 className="contact-cta mt-5 font-display font-extrabold leading-[0.88]">
-          {["BUILD", "WITH", "ME"].map((word) => (
+          <span className="block font-mono text-[6vw] font-normal leading-none tracking-[0.1em] text-[#ff4500] md:text-3xl">
+            &gt;
+          </span>
+          {CTA_WORDS.map((word) => (
             <div key={word} className="block text-[20vw] md:text-[13vw]">{word}</div>
           ))}
         </h3>
+
+        <div className="mt-6 flex items-center gap-2 font-mono text-xs uppercase tracking-[0.15em] text-[#e8e6df] md:text-sm">
+          <span className={`status-dot ${SITE_STATUS.active ? "status-dot-active" : ""}`} aria-hidden="true" />
+          {SITE_STATUS.label}
+        </div>
 
         <div className="mt-10 flex flex-col gap-4 font-mono text-lg uppercase tracking-[0.12em] md:text-2xl">
           {[
@@ -639,9 +700,24 @@ export default function Home() {
           ))}
         </div>
 
-        <p className="mt-14 font-mono text-[10px] uppercase tracking-[0.15em] text-[#444] md:text-xs">
-          MADE BY ABDUL - KCL EE - 2026
-        </p>
+        <div className="title-block mt-16 grid grid-cols-2 gap-x-8 gap-y-4 border-t border-[#242424] pt-6 font-mono text-[10px] uppercase tracking-[0.15em] md:grid-cols-4 md:text-xs">
+          <div>
+            <p className="text-[#3d3d3d]">Drawn By</p>
+            <p className="mt-1 text-[#8a867a]">Abdul</p>
+          </div>
+          <div>
+            <p className="text-[#3d3d3d]">Rev</p>
+            <p className="mt-1 text-[#8a867a]">2026.01</p>
+          </div>
+          <div>
+            <p className="text-[#3d3d3d]">Sheet</p>
+            <p className="mt-1 text-[#8a867a]">01 of 01</p>
+          </div>
+          <div>
+            <p className="text-[#3d3d3d]">Scale</p>
+            <p className="mt-1 text-[#8a867a]">N.T.S.</p>
+          </div>
+        </div>
       </section>
     </motion.main>
   );

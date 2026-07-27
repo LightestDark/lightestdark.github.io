@@ -10,6 +10,8 @@ export type Project = {
   description: string;
   specs: ProjectSpec[];
   tags: string[];
+  /** Hex accent color used on this project's card, icon, and page border. */
+  accent: string;
   /**
    * Build photos for the polaroid-stack gallery on the project page.
    * Drop files in public/images/<slug>/ and list their paths here, e.g.
@@ -43,6 +45,7 @@ export const projects: Project[] = [
       "DC Motors",
       "PWM Control",
     ],
+    accent: "#ff4500",
     images: [],
   },
   {
@@ -71,6 +74,7 @@ export const projects: Project[] = [
       "3D Printing",
       "Embedded Systems",
     ],
+    accent: "#6EE7B7",
     images: [],
   },
   {
@@ -91,6 +95,7 @@ export const projects: Project[] = [
       ["Status", "Complete"],
     ],
     tags: ["Arduino", "WiFi UDP", "C++", "Motor Control", "PCB Design"],
+    accent: "#38BDF8",
     images: [],
   },
   {
@@ -110,6 +115,7 @@ export const projects: Project[] = [
       ["Status", "Complete"],
     ],
     tags: ["Arduino", "Embedded Systems", "Fullmetal Alchemist"],
+    accent: "#DC2626",
     // Example: drop your build photos in public/images/fma-clock/ and list them here.
     // images: ["/images/fma-clock/1.jpg", "/images/fma-clock/2.jpg", "/images/fma-clock/3.jpg"],
     images: [],

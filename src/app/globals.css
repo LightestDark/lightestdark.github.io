@@ -20,20 +20,6 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-ibm-plex-mono), monospace;
-  cursor: none;
-}
-
-a,
-button,
-input,
-textarea,
-select,
-label,
-summary,
-[role="button"],
-[href],
-.magnetic {
-  cursor: none !important;
 }
 
 .font-display {
@@ -234,7 +220,13 @@ summary,
   background: linear-gradient(120deg, rgba(255, 184, 0, 0.2), transparent 35%, rgba(255, 69, 0, 0.22));
 }
 
-.cursor-ring {
+/* ── Hero-only cursor: a small viewfinder made of corner ticks,          ── */
+/* ── reusing the same L-mark language as the blueprint corners above.    ── */
+.hero-cursor-zone {
+  cursor: none;
+}
+
+.hero-cursor {
   position: fixed;
   top: 0;
   left: 0;
@@ -243,45 +235,57 @@ summary,
   height: 26px;
   margin-top: -13px;
   margin-left: -13px;
-  border: 1px solid rgba(232, 230, 223, 0.8);
-  border-radius: 999px;
   pointer-events: none;
-  transition: transform 0.18s ease, background-color 0.18s ease, border-color 0.18s ease;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.18s ease;
 }
 
-.cursor-line-x,
-.cursor-line-y {
+.hero-cursor-visible {
+  opacity: 1;
+}
+
+.hero-cursor span {
   position: absolute;
-  inset: 0;
+  width: 8px;
+  height: 8px;
+  border: 0 solid rgba(232, 230, 223, 0.85);
+  transition: border-color 0.18s ease;
 }
 
-.cursor-line-x::before,
-.cursor-line-y::before {
-  content: "";
-  position: absolute;
-  background: rgba(232, 230, 223, 0.85);
+.hero-cursor .tick-tl {
+  top: 0;
+  left: 0;
+  border-top-width: 1px;
+  border-left-width: 1px;
 }
 
-.cursor-line-x::before {
-  top: 50%;
-  left: -9px;
-  width: 42px;
-  height: 1px;
-  transform: translateY(-50%);
+.hero-cursor .tick-tr {
+  top: 0;
+  right: 0;
+  border-top-width: 1px;
+  border-right-width: 1px;
 }
 
-.cursor-line-y::before {
-  left: 50%;
-  top: -9px;
-  width: 1px;
-  height: 42px;
-  transform: translateX(-50%);
+.hero-cursor .tick-bl {
+  bottom: 0;
+  left: 0;
+  border-bottom-width: 1px;
+  border-left-width: 1px;
 }
 
-.cursor-active {
-  transform: scale(0.55);
+.hero-cursor .tick-br {
+  bottom: 0;
+  right: 0;
+  border-bottom-width: 1px;
+  border-right-width: 1px;
+}
+
+.hero-cursor-active {
+  transform: scale(0.6);
+}
+
+.hero-cursor-active span {
   border-color: rgba(255, 69, 0, 1);
-  background-color: rgba(255, 69, 0, 0.95);
 }
 
 .nav-link {
@@ -306,33 +310,16 @@ summary,
   clip-path: inset(0 0 0 0);
 }
 
-.contact-link {
-  position: relative;
-  padding-bottom: 3px;
+/* ── PCB contact card: 3D tilt support + hover glow ── */
+.pcb-card {
+  transform-style: preserve-3d;
+  will-change: transform;
+  box-shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.6);
+  transition: box-shadow 0.4s ease;
 }
 
-.contact-link::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  width: 100%;
-  height: 1px;
-  background: var(--accent);
-  transform: scaleX(0);
-  transform-origin: left center;
-  transition: transform 0.42s cubic-bezier(0.19, 1, 0.22, 1);
-}
-
-.contact-link:hover::after {
-  transform: scaleX(1);
-}
-
-.type-caret {
-  display: inline-block;
-  margin-left: 4px;
-  color: var(--accent);
-  animation: blink 1s steps(1, end) infinite;
+.pcb-card:hover {
+  box-shadow: 0 40px 80px -20px rgba(201, 162, 39, 0.12), 0 30px 60px -20px rgba(0, 0, 0, 0.6);
 }
 
 @keyframes scan {
@@ -341,17 +328,6 @@ summary,
   }
   100% {
     transform: translateY(260%);
-  }
-}
-
-@keyframes blink {
-  0%,
-  49% {
-    opacity: 1;
-  }
-  50%,
-  100% {
-    opacity: 0;
   }
 }
 

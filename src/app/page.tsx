@@ -807,7 +807,7 @@ export default function Home() {
             <div className="rounded-xl border border-[#1f1f1f] bg-[#0d0d0d] p-5 font-mono text-xs uppercase tracking-[0.15em] text-[#e8e6df]">
               {[
                 ["Institution", "King's College London"],
-                ["Degree", "MEng General Engineering"],
+                ["Degree", "MEng Mechanical Engineering"],
                 ["Year", "First Year"],
                 ["Location", "London, UK"],
                 ["Status", "Open to opportunities"],
@@ -920,7 +920,7 @@ export default function Home() {
         <div className="mt-10 flex flex-wrap items-center gap-x-8 gap-y-2 border-t border-[#1a1a1a] pt-6 font-mono text-[11px] uppercase tracking-[0.15em] text-[#7a776c]">
           <span className="text-[#ff4500]">Education</span>
           <span>King&apos;s College London</span>
-          <span>BEng Electrical Engineering</span>
+          <span>MEng Mechanical Engineering</span>
           <span>First Year</span>
           <span>KCL &apos;27</span>
         </div>

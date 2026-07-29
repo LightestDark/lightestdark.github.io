@@ -158,6 +158,8 @@ export default function Home() {
   const progressRef = useRef<HTMLDivElement | null>(null);
   const gridFlashRef = useRef<HTMLDivElement | null>(null);
   const cursorRef = useRef<HTMLDivElement | null>(null);
+  const trailSegRefs = useRef<(SVGLineElement | null)[]>([]);
+  const trailPointsRef = useRef<{ x: number; y: number }[]>([]);
   const devlogTrackRef = useRef<HTMLDivElement | null>(null);
   const devlogWrapRef = useRef<HTMLDivElement | null>(null);
   const [typedLine, setTypedLine] = useState("");
@@ -271,6 +273,51 @@ export default function Home() {
       heroEl.removeEventListener("mouseover", onOver);
       heroEl.removeEventListener("mouseout", onOut);
     };
+  }, []);
+
+  // ── Trace trail: samples the cursor's own on-screen position each frame ──
+  // ── and draws a short fading copper line behind it — the cursor is     ──
+  // ── literally routing its own trace as it moves.                       ──
+  useEffect(() => {
+    const cursor = cursorRef.current;
+    if (!cursor || window.matchMedia("(pointer: coarse)").matches) {
+      return;
+    }
+
+    const maxPoints = 7;
+    let rafId: number;
+
+    const sample = () => {
+      const isVisible = cursor.classList.contains("hero-cursor-visible");
+      if (isVisible) {
+        const rect = cursor.getBoundingClientRect();
+        const point = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+        const pts = trailPointsRef.current;
+        pts.unshift(point);
+        if (pts.length > maxPoints) pts.length = maxPoints;
+      }
+
+      trailSegRefs.current.forEach((seg, i) => {
+        if (!seg) return;
+        const pts = trailPointsRef.current;
+        const a = isVisible ? pts[i] : undefined;
+        const b = isVisible ? pts[i + 1] : undefined;
+        if (a && b) {
+          seg.setAttribute("x1", String(a.x));
+          seg.setAttribute("y1", String(a.y));
+          seg.setAttribute("x2", String(b.x));
+          seg.setAttribute("y2", String(b.y));
+          seg.style.opacity = String(Math.max(0.42 - i * 0.07, 0));
+        } else {
+          seg.style.opacity = "0";
+        }
+      });
+
+      rafId = requestAnimationFrame(sample);
+    };
+
+    rafId = requestAnimationFrame(sample);
+    return () => cancelAnimationFrame(rafId);
   }, []);
 
   // ── Live "last shipped" stat, pulled from GitHub, falls back silently ────
@@ -593,16 +640,29 @@ export default function Home() {
       <div className="grain-overlay" aria-hidden="true" />
       <div className="grid-flash" aria-hidden="true" ref={gridFlashRef} />
 
+      <svg
+        className="pointer-events-none fixed inset-0 z-[89] hidden h-full w-full md:block"
+        aria-hidden="true"
+      >
+        {Array.from({ length: 6 }).map((_, i) => (
+          <line
+            key={i}
+            ref={(el) => {
+              trailSegRefs.current[i] = el;
+            }}
+            stroke="#f0c94a"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            style={{ opacity: 0, filter: "drop-shadow(0 0 2px rgba(240, 201, 74, 0.6))" }}
+          />
+        ))}
+      </svg>
+
       <div
         ref={cursorRef}
         className="hero-cursor hidden md:block"
         aria-hidden="true"
-      >
-        <span className="tick-tl" />
-        <span className="tick-tr" />
-        <span className="tick-bl" />
-        <span className="tick-br" />
-      </div>
+      />
 
       <nav className="fixed right-5 top-5 z-50 mix-blend-difference md:right-10 md:top-8">
         <ul className="flex items-center gap-4 md:gap-6">
@@ -855,11 +915,14 @@ export default function Home() {
             ref={pcbRef}
             className="pcb-card relative overflow-hidden rounded-xl border border-[#2a2f28] bg-[#0b0f0b] p-6 md:p-12"
           >
-            {/* Traces: a dim base line plus a brighter animated pulse riding
-                the same path, so current visibly travels the copper instead
-                of it being a static drawing. Pure horizontal/vertical lines
-                stay geometrically correct even under non-uniform scaling,
-                unlike circles, so these stay in the stretched SVG. */}
+            {/* Traces: irregular, asymmetric routing — different lengths and
+                turn counts on every side, like an actual routed board rather
+                than four mirrored arms. Kept orthogonal (no diagonals):
+                non-uniform scaling that keeps circles safe would visibly
+                distort a 45° line's angle, so diagonals aren't worth the
+                risk here. Only the four longer "active" traces pulse — a
+                couple of shorter stub/test traces stay dim and static, the
+                way an unused via or test point would on a real board. */}
             <svg
               className="pointer-events-none absolute inset-0 h-full w-full"
               viewBox="0 0 800 420"
@@ -867,22 +930,46 @@ export default function Home() {
               aria-hidden="true"
             >
               {[
-                "M40 40 H200 V110 H360",
-                "M760 40 H600 V110 H440",
-                "M40 380 H200 V300 H360",
-                "M760 380 H600 V300 H440",
-              ].map((d, i) => (
+                "M30 34 H140 V80 H230 V130 H340",
+                "M770 28 H690 V90 H580",
+                "M30 392 H160 V340 H260 V300",
+                "M770 390 H660 V340 H590 V280 H500 V240",
+              ].map((d) => (
                 <path key={d} d={d} stroke="#5c4a18" strokeWidth="1.4" fill="none" opacity={0.55} />
               ))}
-              <rect x="360" y="190" width="80" height="40" fill="none" stroke="#5c4a18" strokeWidth="1.4" opacity={0.55} />
-              <path d="M375 190 V178 M400 190 V178 M425 190 V178" stroke="#5c4a18" strokeWidth="1.4" opacity={0.55} />
-              <path d="M375 230 V242 M400 230 V242 M425 230 V242" stroke="#5c4a18" strokeWidth="1.4" opacity={0.55} />
+
+              {/* Dead stub traces — routed but not carrying the pulse. */}
+              <path d="M410 50 V90" stroke="#4a3d16" strokeWidth="1.2" fill="none" opacity={0.4} />
+              <path d="M460 340 V300 H430" stroke="#4a3d16" strokeWidth="1.2" fill="none" opacity={0.4} />
+
+              {/* Off-center IC footprint, four pins a side. */}
+              <rect x="340" y="155" width="90" height="50" fill="none" stroke="#5c4a18" strokeWidth="1.4" opacity={0.55} />
+              <path
+                d="M355 155 V143 M375 155 V143 M395 155 V143 M415 155 V143"
+                stroke="#5c4a18"
+                strokeWidth="1.2"
+                opacity={0.55}
+              />
+              <path
+                d="M355 205 V217 M375 205 V217 M395 205 V217 M415 205 V217"
+                stroke="#5c4a18"
+                strokeWidth="1.2"
+                opacity={0.55}
+              />
+
+              {/* A resistor footprint feeding off trace 3's end. */}
+              <rect x="225" y="293" width="36" height="14" fill="none" stroke="#5c4a18" strokeWidth="1.2" opacity={0.55} />
+              <path d="M225 300 H210 M261 300 H276" stroke="#5c4a18" strokeWidth="1.2" opacity={0.55} />
+
+              {/* A capacitor footprint feeding off trace 4's end. */}
+              <path d="M495 233 V247 M505 233 V247" stroke="#5c4a18" strokeWidth="1.4" opacity={0.55} />
+              <path d="M480 240 H495 M505 240 H520" stroke="#5c4a18" strokeWidth="1.2" opacity={0.55} />
 
               {[
-                "M40 40 H200 V110 H360",
-                "M760 40 H600 V110 H440",
-                "M40 380 H200 V300 H360",
-                "M760 380 H600 V300 H440",
+                "M30 34 H140 V80 H230 V130 H340",
+                "M770 28 H690 V90 H580",
+                "M30 392 H160 V340 H260 V300",
+                "M770 390 H660 V340 H590 V280 H500 V240",
               ].map((d, i) => (
                 <path
                   key={`pulse-${d}`}
@@ -895,18 +982,20 @@ export default function Home() {
               ))}
             </svg>
 
-            {/* Vias + mounting holes: real circular elements, not SVG circles
-                inside a non-uniformly scaled viewBox (which stretches them
-                into ellipses — that was the actual bug before). */}
+            {/* Vias: real circular elements, not SVG circles inside a
+                non-uniformly scaled viewBox (which stretches them into
+                ellipses — that was the actual bug before). Placed only at
+                the major direction-change points, not every single bend. */}
             {[
-              [25, 9.52],
-              [45, 26.19],
-              [75, 9.52],
-              [55, 26.19],
-              [25, 90.48],
-              [45, 71.43],
-              [75, 90.48],
-              [55, 71.43],
+              [17.5, 19.05],
+              [42.5, 30.95],
+              [86.25, 6.67],
+              [72.5, 21.43],
+              [20, 80.95],
+              [32.5, 71.43],
+              [73.75, 80.95],
+              [62.5, 57.14],
+              [53.75, 71.43],
             ].map(([x, y], i) => (
               <span
                 key={i}
@@ -915,6 +1004,14 @@ export default function Home() {
                 aria-hidden="true"
               />
             ))}
+
+            {/* One hollow test-point ring on the dead stub — a different
+                marker style than the vias, for a bit of real variety. */}
+            <span
+              className="absolute h-[10px] w-[10px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#8a6d1f]"
+              style={{ left: "51.25%", top: "21.43%" }}
+              aria-hidden="true"
+            />
 
             {[
               ["top-3", "left-3"],

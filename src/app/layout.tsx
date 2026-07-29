@@ -17,8 +17,8 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Abdul | Software Engineering Portfolio",
-  description: "Technical dark portfolio for Abdul, maker and KCL EE student.",
+  title: "Abdul | Mechanical Engineering Portfolio",
+  description: "Technical dark portfolio for Abdul, maker and KCL mechanical engineering student.",
 };
 
 export default function RootLayout({

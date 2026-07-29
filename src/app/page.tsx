@@ -71,6 +71,84 @@ function formatRelativeTime(dateStr: string) {
   return `${days}D AGO`;
 }
 
+const SCRAMBLE_CHARS = "!<>-_/\\[]{}=+*^?#ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+// A skill label that scrambles through random characters on hover before
+// resolving back to itself — same idea as the hero letter reveal, just
+// triggered by interaction instead of on load. Keeps its own local state so
+// unrelated re-renders elsewhere on the page can't reset it mid-animation.
+function ScrambleSkill({
+  tag,
+  fontSize,
+  opacity,
+  accent,
+  isActive,
+  onHoverStart,
+  onHoverEnd,
+}: {
+  tag: string;
+  fontSize: string;
+  opacity: number;
+  accent?: string;
+  isActive: boolean;
+  onHoverStart: () => void;
+  onHoverEnd: () => void;
+}) {
+  const [display, setDisplay] = useState(tag);
+  const rafRef = useRef<number | null>(null);
+
+  const scramble = () => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    const duration = 420;
+    const start = performance.now();
+
+    const tick = (now: number) => {
+      const progress = Math.min((now - start) / duration, 1);
+      const revealCount = Math.floor(progress * tag.length * 1.3);
+      let out = "";
+      for (let i = 0; i < tag.length; i++) {
+        out +=
+          tag[i] === " " || i < revealCount
+            ? tag[i]
+            : SCRAMBLE_CHARS[Math.floor(Math.random() * SCRAMBLE_CHARS.length)];
+      }
+      setDisplay(out);
+      if (progress < 1) {
+        rafRef.current = requestAnimationFrame(tick);
+      } else {
+        setDisplay(tag);
+      }
+    };
+    rafRef.current = requestAnimationFrame(tick);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, []);
+
+  return (
+    <button
+      type="button"
+      onMouseEnter={() => {
+        scramble();
+        onHoverStart();
+      }}
+      onFocus={() => {
+        scramble();
+        onHoverStart();
+      }}
+      onMouseLeave={onHoverEnd}
+      onBlur={onHoverEnd}
+      className="magnetic font-mono uppercase leading-none tracking-[0.04em] text-[#e8e6df] transition-[opacity] duration-200 hover:!opacity-100"
+      style={{ fontSize, opacity, color: isActive ? accent : undefined }}
+    >
+      {display}
+    </button>
+  );
+}
+
 export default function Home() {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const heroRef = useRef<HTMLElement | null>(null);
@@ -266,21 +344,98 @@ export default function Home() {
     const total      = shuffled.length;
     const totalSpread = 460;
 
+    const timers: number[] = [];
+
     shuffled.forEach((el, i) => {
       const delay = (i / total) * totalSpread + Math.random() * 80;
-      setTimeout(() => {
-        el.classList.remove("hero-letter-hidden");
-        el.classList.add("hero-letter-glitch");
-        setTimeout(() => {
-          el.classList.remove("hero-letter-glitch");
-          el.classList.add("hero-letter-yellow");
-          setTimeout(() => {
-            el.classList.remove("hero-letter-yellow");
-            el.classList.add("hero-letter-final");
-          }, YELLOW_MS);
-        }, GLITCH_MS);
-      }, delay);
+      const finalChar = el.textContent ?? "";
+
+      timers.push(
+        window.setTimeout(() => {
+          el.classList.remove("hero-letter-hidden");
+          el.classList.add("hero-letter-glitch");
+
+          // Cycle through a few random glyphs before settling on the real
+          // letter, so the reveal reads as scrambling rather than just a
+          // color fade.
+          const scrambleTicks = 4;
+          let tick = 0;
+          const scrambleInterval = window.setInterval(() => {
+            el.textContent = SCRAMBLE_CHARS[Math.floor(Math.random() * SCRAMBLE_CHARS.length)];
+            tick += 1;
+            if (tick >= scrambleTicks) {
+              window.clearInterval(scrambleInterval);
+              el.textContent = finalChar;
+            }
+          }, GLITCH_MS / scrambleTicks);
+
+          timers.push(
+            window.setTimeout(() => {
+              el.classList.remove("hero-letter-glitch");
+              el.classList.add("hero-letter-yellow");
+              timers.push(
+                window.setTimeout(() => {
+                  el.classList.remove("hero-letter-yellow");
+                  el.classList.add("hero-letter-final");
+                }, YELLOW_MS)
+              );
+            }, GLITCH_MS)
+          );
+        }, delay)
+      );
     });
+
+    return () => {
+      timers.forEach((t) => window.clearTimeout(t));
+    };
+  }, []);
+
+  // ── Occasional idle flicker: after the reveal settles, briefly re-scramble ──
+  // ── one random letter every few seconds — subtle, not the main event.    ──
+  useEffect(() => {
+    const letters = heroLettersRef.current.filter(Boolean);
+    if (!letters.length) return;
+
+    let cancelled = false;
+    const timers: number[] = [];
+
+    const triggerIdleGlitch = () => {
+      const el = letters[Math.floor(Math.random() * letters.length)];
+      const finalChar = el.textContent ?? "";
+      el.classList.remove("hero-letter-final");
+      el.classList.add("hero-letter-glitch");
+
+      let tick = 0;
+      const ticks = 3;
+      const interval = window.setInterval(() => {
+        el.textContent = SCRAMBLE_CHARS[Math.floor(Math.random() * SCRAMBLE_CHARS.length)];
+        tick += 1;
+        if (tick >= ticks) {
+          window.clearInterval(interval);
+          el.textContent = finalChar;
+          el.classList.remove("hero-letter-glitch");
+          el.classList.add("hero-letter-final");
+        }
+      }, 60);
+    };
+
+    const scheduleNext = () => {
+      const wait = 3500 + Math.random() * 3500;
+      timers.push(
+        window.setTimeout(() => {
+          if (cancelled) return;
+          triggerIdleGlitch();
+          scheduleNext();
+        }, wait)
+      );
+    };
+
+    timers.push(window.setTimeout(scheduleNext, 1800));
+
+    return () => {
+      cancelled = true;
+      timers.forEach((t) => window.clearTimeout(t));
+    };
   }, []);
 
   useGSAP(
@@ -627,22 +782,16 @@ export default function Home() {
             const weight = count / maxSkillCount;
             const usedIn = projects.filter((project) => project.tags.includes(tag));
             return (
-              <button
+              <ScrambleSkill
                 key={tag}
-                type="button"
-                onMouseEnter={() => setActiveSkill(tag)}
-                onFocus={() => setActiveSkill(tag)}
-                onMouseLeave={() => setActiveSkill((current) => (current === tag ? null : current))}
-                onBlur={() => setActiveSkill((current) => (current === tag ? null : current))}
-                className="magnetic font-mono uppercase leading-none tracking-[0.04em] text-[#e8e6df] transition-all duration-200 hover:!opacity-100"
-                style={{
-                  fontSize: `${0.95 + weight * 0.95}rem`,
-                  opacity: 0.4 + weight * 0.6,
-                  color: activeSkill === tag ? usedIn[0]?.accent : undefined,
-                }}
-              >
-                {tag}
-              </button>
+                tag={tag}
+                fontSize={`${0.95 + weight * 0.95}rem`}
+                opacity={0.4 + weight * 0.6}
+                accent={usedIn[0]?.accent}
+                isActive={activeSkill === tag}
+                onHoverStart={() => setActiveSkill(tag)}
+                onHoverEnd={() => setActiveSkill((current) => (current === tag ? null : current))}
+              />
             );
           })}
         </div>
@@ -706,33 +855,66 @@ export default function Home() {
             ref={pcbRef}
             className="pcb-card relative overflow-hidden rounded-xl border border-[#2a2f28] bg-[#0b0f0b] p-6 md:p-12"
           >
+            {/* Traces: pure horizontal/vertical lines stay correct even under
+                non-uniform scaling, unlike circles, so these stay in the SVG. */}
             <svg
-              className="pointer-events-none absolute inset-0 h-full w-full opacity-80"
+              className="pointer-events-none absolute inset-0 h-full w-full opacity-70"
               viewBox="0 0 800 420"
               preserveAspectRatio="none"
               aria-hidden="true"
             >
-              <path d="M36 36 H180 V96 H320" stroke="#8a6d1f" strokeWidth="1.4" fill="none" />
-              <path d="M36 384 H160 V300 H300" stroke="#8a6d1f" strokeWidth="1.4" fill="none" />
-              <path d="M764 36 H600 V120" stroke="#8a6d1f" strokeWidth="1.4" fill="none" />
-              <path d="M764 384 H620 V270" stroke="#8a6d1f" strokeWidth="1.4" fill="none" />
-              <path d="M400 20 V70" stroke="#8a6d1f" strokeWidth="1.4" fill="none" />
-              <circle cx="180" cy="36" r="3" fill="#c9a227" />
-              <circle cx="320" cy="96" r="3" fill="#c9a227" />
-              <circle cx="160" cy="384" r="3" fill="#c9a227" />
-              <circle cx="300" cy="300" r="3" fill="#c9a227" />
-              <circle cx="600" cy="36" r="3" fill="#c9a227" />
-              <circle cx="620" cy="384" r="3" fill="#c9a227" />
-              <circle cx="400" cy="20" r="3" fill="#c9a227" />
-              <circle cx="30" cy="30" r="7" fill="none" stroke="#2a2f28" strokeWidth="2" />
-              <circle cx="770" cy="30" r="7" fill="none" stroke="#2a2f28" strokeWidth="2" />
-              <circle cx="30" cy="390" r="7" fill="none" stroke="#2a2f28" strokeWidth="2" />
-              <circle cx="770" cy="390" r="7" fill="none" stroke="#2a2f28" strokeWidth="2" />
+              <path d="M40 40 H200 V110 H360" stroke="#8a6d1f" strokeWidth="1.4" fill="none" />
+              <path d="M760 40 H600 V110 H440" stroke="#8a6d1f" strokeWidth="1.4" fill="none" />
+              <path d="M40 380 H200 V300 H360" stroke="#8a6d1f" strokeWidth="1.4" fill="none" />
+              <path d="M760 380 H600 V300 H440" stroke="#8a6d1f" strokeWidth="1.4" fill="none" />
+              <rect x="360" y="190" width="80" height="40" fill="none" stroke="#8a6d1f" strokeWidth="1.4" />
+              <path d="M375 190 V178 M400 190 V178 M425 190 V178" stroke="#8a6d1f" strokeWidth="1.4" />
+              <path d="M375 230 V242 M400 230 V242 M425 230 V242" stroke="#8a6d1f" strokeWidth="1.4" />
             </svg>
+
+            {/* Vias + mounting holes: real circular elements, not SVG circles
+                inside a non-uniformly scaled viewBox (which stretches them
+                into ellipses — that was the actual bug before). */}
+            {[
+              [25, 9.52],
+              [45, 26.19],
+              [75, 9.52],
+              [55, 26.19],
+              [25, 90.48],
+              [45, 71.43],
+              [75, 90.48],
+              [55, 71.43],
+            ].map(([x, y], i) => (
+              <span
+                key={i}
+                className="absolute h-[6px] w-[6px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#c9a227]"
+                style={{ left: `${x}%`, top: `${y}%` }}
+                aria-hidden="true"
+              />
+            ))}
+
+            {[
+              ["top-3", "left-3"],
+              ["top-3", "right-3"],
+              ["bottom-3", "left-3"],
+              ["bottom-3", "right-3"],
+            ].map(([tPos, lPos], i) => (
+              <span
+                key={i}
+                className={`absolute ${tPos} ${lPos} h-3 w-3 rounded-full border border-[#3a4136] bg-[#0b0f0b]`}
+                aria-hidden="true"
+              >
+                <span className="absolute inset-[3px] rounded-full bg-[#050705]" />
+              </span>
+            ))}
 
             <div className="relative flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.15em] text-[#5f6a5c] md:text-xs">
               <span>BOARD: CONTACT-01</span>
               <span className="flex items-center gap-2 text-[#8a9686]">
+                <svg width="20" height="9" viewBox="0 0 20 9" className="text-[#6b7a63]" aria-hidden="true">
+                  <path d="M0 4.5 H3.5 M16.5 4.5 H20" stroke="currentColor" strokeWidth="1" />
+                  <rect x="3.5" y="1" width="13" height="7" rx="1" fill="none" stroke="currentColor" strokeWidth="1" />
+                </svg>
                 <span className={`status-dot ${SITE_STATUS.active ? "status-dot-active" : ""}`} aria-hidden="true" />
                 PWR &middot; {SITE_STATUS.label}
               </span>

@@ -57,6 +57,55 @@ const SITE_STATUS = {
 const TAGLINE = "Engineer & Maker - KCL '27";
 const GITHUB_REPO = "lightestdark/lightestdark.github.io";
 
+// Generated with a random-walk trace router (grid-constrained, no
+// self-crossing) rather than hand-placed — the same approach real
+// circuit-board-art generators use, which is why it reads as a dense,
+// organic layout instead of a handful of symmetric lines.
+const PCB_TRACES = [
+  "M420 100 V0",
+  "M520 40 V20 H460 V0",
+  "M100 360 V340 H20 V400 H0",
+  "M140 240 V400",
+  "M760 40 V140 H660",
+  "M60 60 H40 V0 H120 V140",
+  "M560 280 H780",
+  "M100 160 H0",
+  "M300 380 H360 V400",
+  "M760 260 V200 H780",
+  "M180 200 V260 H260",
+  "M540 100 V120 H520 V280 H480",
+  "M700 80 V0",
+  "M740 200 H680 V180",
+  "M280 320 H340 V340",
+  "M420 300 V400",
+  "M480 200 V120",
+  "M320 120 H220 V200 H300 V240",
+  "M380 60 V140 H440 V200 H400 V240 H440",
+  "M720 380 H560",
+  "M460 320 V400 H540",
+  "M580 200 V60",
+  "M40 300 V260 H80 V300 H100",
+  "M160 320 H240",
+  "M140 20 H220",
+  "M340 260 H360 V280 H400",
+];
+
+// Indices into PCB_TRACES that carry the animated current pulse — the
+// longer, more turn-heavy nets. The rest stay dim and static, the way
+// plenty of routed-but-idle nets look on a real board.
+const PCB_ACTIVE_TRACES = new Set([1, 2, 4, 5, 11, 17, 18, 22, 25]);
+
+// Via dots at every turn point across all 26 traces, in percentage
+// coordinates (matching the 800×420 viewBox).
+const PCB_VIAS: [number, number][] = [
+  [65, 4.76], [57.5, 4.76], [12.5, 80.95], [2.5, 80.95], [2.5, 95.24],
+  [95, 33.33], [5, 14.29], [5, 0], [15, 0], [45, 90.48],
+  [95, 47.62], [22.5, 61.9], [67.5, 28.57], [65, 28.57], [65, 66.67],
+  [85, 47.62], [42.5, 76.19], [27.5, 28.57], [27.5, 47.62], [37.5, 47.62],
+  [47.5, 33.33], [55, 33.33], [55, 47.62], [50, 47.62], [50, 57.14],
+  [57.5, 95.24], [5, 61.9], [10, 61.9], [10, 71.43], [45, 61.9], [45, 66.67],
+];
+
 // Tags that describe a project's theme rather than an actual skill —
 // excluded from the capabilities cloud below.
 const NON_SKILL_TAGS = new Set(["fullmetal alchemist"]);
@@ -229,25 +278,21 @@ export default function Home() {
     return () => observer.disconnect();
   }, []);
 
-  // ── Hero-only cursor: tracks the mouse only while it's inside the hero, ──
-  // ── leaves the system cursor alone everywhere else on the site.        ──
+  // ── Site-wide cursor: instant 1:1 positioning (no easing/lag — matches ──
+  // ── native cursor speed), tracked via window/document listeners so it  ──
+  // ── can't go stale after clicks or scoping to a specific element.      ──
   useEffect(() => {
-    const heroEl = heroRef.current;
     const cursor = cursorRef.current;
-    if (!heroEl || !cursor || window.matchMedia("(pointer: coarse)").matches) {
+    if (!cursor || window.matchMedia("(pointer: coarse)").matches) {
       return;
     }
 
-    const xTo = gsap.quickTo(cursor, "x", { duration: 0.12, ease: "power3.out" });
-    const yTo = gsap.quickTo(cursor, "y", { duration: 0.12, ease: "power3.out" });
-
     const onMove = (event: MouseEvent) => {
-      xTo(event.clientX);
-      yTo(event.clientY);
+      cursor.style.transform = `translate3d(${event.clientX}px, ${event.clientY}px, 0)`;
       cursor.classList.add("hero-cursor-visible");
     };
 
-    const onLeave = () => {
+    const onDocLeave = () => {
       cursor.classList.remove("hero-cursor-visible");
     };
 
@@ -258,20 +303,23 @@ export default function Home() {
       }
     };
 
-    const onOut = () => {
-      cursor.classList.remove("hero-cursor-active");
+    const onOut = (event: Event) => {
+      const target = event.target as HTMLElement;
+      if (target.closest("a, button, .magnetic")) {
+        cursor.classList.remove("hero-cursor-active");
+      }
     };
 
-    heroEl.addEventListener("mousemove", onMove);
-    heroEl.addEventListener("mouseleave", onLeave);
-    heroEl.addEventListener("mouseover", onOver);
-    heroEl.addEventListener("mouseout", onOut);
+    window.addEventListener("mousemove", onMove);
+    document.documentElement.addEventListener("mouseleave", onDocLeave);
+    document.addEventListener("mouseover", onOver);
+    document.addEventListener("mouseout", onOut);
 
     return () => {
-      heroEl.removeEventListener("mousemove", onMove);
-      heroEl.removeEventListener("mouseleave", onLeave);
-      heroEl.removeEventListener("mouseover", onOver);
-      heroEl.removeEventListener("mouseout", onOut);
+      window.removeEventListener("mousemove", onMove);
+      document.documentElement.removeEventListener("mouseleave", onDocLeave);
+      document.removeEventListener("mouseover", onOver);
+      document.removeEventListener("mouseout", onOut);
     };
   }, []);
 
@@ -687,7 +735,7 @@ export default function Home() {
         </ul>
       </nav>
 
-      <section ref={heroRef} className="hero-cursor-zone relative min-h-screen px-4 pb-20 pt-28 md:px-10" id="hero">
+      <section ref={heroRef} className="relative min-h-screen px-4 pb-20 pt-28 md:px-10" id="hero">
         <div className="mx-auto flex h-[calc(100vh-7rem)] w-full max-w-[1280px] flex-col justify-between">
           <div className="relative mt-14">
             <span className="blueprint-corner blueprint-corner-tl hidden md:block" aria-hidden="true" />
@@ -915,34 +963,31 @@ export default function Home() {
             ref={pcbRef}
             className="pcb-card relative overflow-hidden rounded-xl border border-[#2a2f28] bg-[#0b0f0b] p-6 md:p-12"
           >
-            {/* Traces: irregular, asymmetric routing — different lengths and
-                turn counts on every side, like an actual routed board rather
-                than four mirrored arms. Kept orthogonal (no diagonals):
-                non-uniform scaling that keeps circles safe would visibly
-                distort a 45° line's angle, so diagonals aren't worth the
-                risk here. Only the four longer "active" traces pulse — a
-                couple of shorter stub/test traces stay dim and static, the
-                way an unused via or test point would on a real board. */}
+            {/* Traces: generated by a random-walk router (see PCB_TRACES
+                above), not hand-placed — this is the same technique real
+                circuit-board-art generators use for exactly this dense,
+                non-repeating look. Kept orthogonal: non-uniform scaling
+                that keeps circles safe would visibly distort a diagonal's
+                angle, so no 45s here. Only a subset of nets carry the
+                pulse — the rest sit dim and idle, like real unused routing. */}
             <svg
               className="pointer-events-none absolute inset-0 h-full w-full"
               viewBox="0 0 800 420"
               preserveAspectRatio="none"
               aria-hidden="true"
             >
-              {[
-                "M30 34 H140 V80 H230 V130 H340",
-                "M770 28 H690 V90 H580",
-                "M30 392 H160 V340 H260 V300",
-                "M770 390 H660 V340 H590 V280 H500 V240",
-              ].map((d) => (
-                <path key={d} d={d} stroke="#5c4a18" strokeWidth="1.4" fill="none" opacity={0.55} />
+              {PCB_TRACES.map((d, i) => (
+                <path
+                  key={`base-${i}`}
+                  d={d}
+                  stroke="#5c4a18"
+                  strokeWidth="1.3"
+                  fill="none"
+                  opacity={PCB_ACTIVE_TRACES.has(i) ? 0.5 : 0.32}
+                />
               ))}
 
-              {/* Dead stub traces — routed but not carrying the pulse. */}
-              <path d="M410 50 V90" stroke="#4a3d16" strokeWidth="1.2" fill="none" opacity={0.4} />
-              <path d="M460 340 V300 H430" stroke="#4a3d16" strokeWidth="1.2" fill="none" opacity={0.4} />
-
-              {/* Off-center IC footprint, four pins a side. */}
+              {/* A single IC block sitting among the routed traces. */}
               <rect x="340" y="155" width="90" height="50" fill="none" stroke="#5c4a18" strokeWidth="1.4" opacity={0.55} />
               <path
                 d="M355 155 V143 M375 155 V143 M395 155 V143 M415 155 V143"
@@ -957,56 +1002,34 @@ export default function Home() {
                 opacity={0.55}
               />
 
-              {/* A resistor footprint feeding off trace 3's end. */}
-              <rect x="225" y="293" width="36" height="14" fill="none" stroke="#5c4a18" strokeWidth="1.2" opacity={0.55} />
-              <path d="M225 300 H210 M261 300 H276" stroke="#5c4a18" strokeWidth="1.2" opacity={0.55} />
-
-              {/* A capacitor footprint feeding off trace 4's end. */}
-              <path d="M495 233 V247 M505 233 V247" stroke="#5c4a18" strokeWidth="1.4" opacity={0.55} />
-              <path d="M480 240 H495 M505 240 H520" stroke="#5c4a18" strokeWidth="1.2" opacity={0.55} />
-
-              {[
-                "M30 34 H140 V80 H230 V130 H340",
-                "M770 28 H690 V90 H580",
-                "M30 392 H160 V340 H260 V300",
-                "M770 390 H660 V340 H590 V280 H500 V240",
-              ].map((d, i) => (
-                <path
-                  key={`pulse-${d}`}
-                  d={d}
-                  stroke="#f0c94a"
-                  strokeWidth="1.6"
-                  fill="none"
-                  className={`pcb-pulse pcb-pulse-${i}`}
-                />
-              ))}
+              {PCB_TRACES.map((d, i) =>
+                PCB_ACTIVE_TRACES.has(i) ? (
+                  <path
+                    key={`pulse-${i}`}
+                    d={d}
+                    stroke="#f0c94a"
+                    strokeWidth="1.6"
+                    fill="none"
+                    className={`pcb-pulse pcb-pulse-${i % 6}`}
+                  />
+                ) : null
+              )}
             </svg>
 
             {/* Vias: real circular elements, not SVG circles inside a
                 non-uniformly scaled viewBox (which stretches them into
-                ellipses — that was the actual bug before). Placed only at
-                the major direction-change points, not every single bend. */}
-            {[
-              [17.5, 19.05],
-              [42.5, 30.95],
-              [86.25, 6.67],
-              [72.5, 21.43],
-              [20, 80.95],
-              [32.5, 71.43],
-              [73.75, 80.95],
-              [62.5, 57.14],
-              [53.75, 71.43],
-            ].map(([x, y], i) => (
+                ellipses — that was the actual bug before). One per turn
+                across all 26 generated traces. */}
+            {PCB_VIAS.map(([x, y], i) => (
               <span
                 key={i}
-                className="absolute h-[6px] w-[6px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#c9a227]"
-                style={{ left: `${x}%`, top: `${y}%` }}
+                className="absolute h-[5px] w-[5px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#c9a227]"
+                style={{ left: `${x}%`, top: `${y}%`, opacity: 0.75 }}
                 aria-hidden="true"
               />
             ))}
 
-            {/* One hollow test-point ring on the dead stub — a different
-                marker style than the vias, for a bit of real variety. */}
+            {/* One hollow test-point ring for a bit of marker variety. */}
             <span
               className="absolute h-[10px] w-[10px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#8a6d1f]"
               style={{ left: "51.25%", top: "21.43%" }}

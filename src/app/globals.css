@@ -322,6 +322,39 @@ body {
   box-shadow: 0 40px 80px -20px rgba(201, 162, 39, 0.12), 0 30px 60px -20px rgba(0, 0, 0, 0.6);
 }
 
+/* ── PCB trace pulse: a bright dash traveling along each trace, like    ── */
+/* ── current actually flowing, instead of a static gold line.          ── */
+.pcb-pulse {
+  stroke-dasharray: 8 46;
+  animation: pcb-current 3.2s linear infinite;
+  filter: drop-shadow(0 0 2px rgba(240, 201, 74, 0.7));
+}
+
+.pcb-pulse-0 {
+  animation-delay: -0.6s;
+}
+
+.pcb-pulse-1 {
+  animation-delay: -1.4s;
+  animation-duration: 3.6s;
+}
+
+.pcb-pulse-2 {
+  animation-delay: -2.1s;
+  animation-duration: 2.9s;
+}
+
+.pcb-pulse-3 {
+  animation-delay: -0.3s;
+  animation-duration: 3.4s;
+}
+
+@keyframes pcb-current {
+  to {
+    stroke-dashoffset: -54;
+  }
+}
+
 @keyframes scan {
   0% {
     transform: translateY(-120%);

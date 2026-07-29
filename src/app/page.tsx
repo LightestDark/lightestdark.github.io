@@ -855,21 +855,44 @@ export default function Home() {
             ref={pcbRef}
             className="pcb-card relative overflow-hidden rounded-xl border border-[#2a2f28] bg-[#0b0f0b] p-6 md:p-12"
           >
-            {/* Traces: pure horizontal/vertical lines stay correct even under
-                non-uniform scaling, unlike circles, so these stay in the SVG. */}
+            {/* Traces: a dim base line plus a brighter animated pulse riding
+                the same path, so current visibly travels the copper instead
+                of it being a static drawing. Pure horizontal/vertical lines
+                stay geometrically correct even under non-uniform scaling,
+                unlike circles, so these stay in the stretched SVG. */}
             <svg
-              className="pointer-events-none absolute inset-0 h-full w-full opacity-70"
+              className="pointer-events-none absolute inset-0 h-full w-full"
               viewBox="0 0 800 420"
               preserveAspectRatio="none"
               aria-hidden="true"
             >
-              <path d="M40 40 H200 V110 H360" stroke="#8a6d1f" strokeWidth="1.4" fill="none" />
-              <path d="M760 40 H600 V110 H440" stroke="#8a6d1f" strokeWidth="1.4" fill="none" />
-              <path d="M40 380 H200 V300 H360" stroke="#8a6d1f" strokeWidth="1.4" fill="none" />
-              <path d="M760 380 H600 V300 H440" stroke="#8a6d1f" strokeWidth="1.4" fill="none" />
-              <rect x="360" y="190" width="80" height="40" fill="none" stroke="#8a6d1f" strokeWidth="1.4" />
-              <path d="M375 190 V178 M400 190 V178 M425 190 V178" stroke="#8a6d1f" strokeWidth="1.4" />
-              <path d="M375 230 V242 M400 230 V242 M425 230 V242" stroke="#8a6d1f" strokeWidth="1.4" />
+              {[
+                "M40 40 H200 V110 H360",
+                "M760 40 H600 V110 H440",
+                "M40 380 H200 V300 H360",
+                "M760 380 H600 V300 H440",
+              ].map((d, i) => (
+                <path key={d} d={d} stroke="#5c4a18" strokeWidth="1.4" fill="none" opacity={0.55} />
+              ))}
+              <rect x="360" y="190" width="80" height="40" fill="none" stroke="#5c4a18" strokeWidth="1.4" opacity={0.55} />
+              <path d="M375 190 V178 M400 190 V178 M425 190 V178" stroke="#5c4a18" strokeWidth="1.4" opacity={0.55} />
+              <path d="M375 230 V242 M400 230 V242 M425 230 V242" stroke="#5c4a18" strokeWidth="1.4" opacity={0.55} />
+
+              {[
+                "M40 40 H200 V110 H360",
+                "M760 40 H600 V110 H440",
+                "M40 380 H200 V300 H360",
+                "M760 380 H600 V300 H440",
+              ].map((d, i) => (
+                <path
+                  key={`pulse-${d}`}
+                  d={d}
+                  stroke="#f0c94a"
+                  strokeWidth="1.6"
+                  fill="none"
+                  className={`pcb-pulse pcb-pulse-${i}`}
+                />
+              ))}
             </svg>
 
             {/* Vias + mounting holes: real circular elements, not SVG circles
@@ -958,25 +981,6 @@ export default function Home() {
                 </span>
               </a>
             </div>
-          </div>
-        </div>
-
-        <div className="title-block mt-16 grid grid-cols-2 gap-x-8 gap-y-4 border-t border-[#242424] pt-6 font-mono text-[10px] uppercase tracking-[0.15em] md:grid-cols-4 md:text-xs">
-          <div>
-            <p className="text-[#3d3d3d]">Drawn By</p>
-            <p className="mt-1 text-[#8a867a]">Abdul</p>
-          </div>
-          <div>
-            <p className="text-[#3d3d3d]">Rev</p>
-            <p className="mt-1 text-[#8a867a]">2026.01</p>
-          </div>
-          <div>
-            <p className="text-[#3d3d3d]">Sheet</p>
-            <p className="mt-1 text-[#8a867a]">01 of 01</p>
-          </div>
-          <div>
-            <p className="text-[#3d3d3d]">Scale</p>
-            <p className="mt-1 text-[#8a867a]">N.T.S.</p>
           </div>
         </div>
       </section>
